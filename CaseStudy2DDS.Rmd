@@ -1,15 +1,39 @@
 ---
-title: "Talent management data analysis and attrition investigation"
+title: "EDA analysis about Employee Attrition by DDSAnalytics"
 author: "Carlos Estevez"
 date: "2023-03-31"
 editor_options: 
   chunk_output_type: console
-output: html_document
+output: 
+  html_document:
+    css: "bootstrap.css"
 ---
 
-# Loading libraries
+<div class="alert alert-dismissible alert-warning">
 
-```{r LoadingLibraries}
+<h3><strong>Introduction</strong></h3>
+
+DDSAnalytics is a company dedicated to conducting data analysis in different areas aiming to help different organizations to streamline their processes and improve their relationship with their business partnes including customers, vendors, and employees.
+
+In this EDA project DDSAnalytics will conduct an analysis for the Frito-lay organization about employee attrition. The Frito-Lay organization has a problem of attrition and they want to identify the reasons behind it. We will investigate the different parameters correlated to attrition and build a model to predict it
+
+<strong>Remember to execute each Chunk in sequence</strong>
+<p>
+
+![](images/FullLogo_Transparent%20(2).png){width="373"}
+
+</div>
+<p>
+
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Loading the libraries and initializing</strong></h3>
+<div class="alert alert-dismissible alert-info">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>It is very important to update the working directory once you download the project!</strong> 
+  <br>You can use Amazon S3 instead. Take a look at the following section</br>
+</div>
+<br>
+```{r LoadingLibraries,warning=FALSE, message=FALSE}
 
 library(tidyverse)
 library(stringr)
@@ -22,48 +46,63 @@ library(smotefamily)
 library(GGally)
 
 
-```
-
-
-# Reading data from a local file
-## Only if data from S3 can't be provided
-```{r}
-
-
-df_std_1 = read.csv("C:\\Users\\cestevez\\Dropbox\\Cloud PC\\Thinkpad\\Thinkpad Desktop\\Master Data Science SMU\\Class_Sessions\\Data Science Sessions\\Repository\\SMU_MSDS_6306\\session_14_15\\CaseStudy2-data.csv",header = TRUE)
+file_path = "C:\\Users\\cestevez\\Dropbox\\Cloud PC\\Thinkpad\\Thinkpad Desktop\\Master Data Science SMU\\Class_Sessions\\Data Science Sessions\\Repository\\CaseStudy2DDS\\files\\"
+main_data_file = paste0(file_path,"CaseStudy2-data.csv")
+main_data_file_noattr = paste0(file_path,"Case2PredictionsCESTEVEZ Attrition.csv")
+main_data_file_mi = paste0(file_path,"Case2PredictionsCESTEVEZ Salary.csv")
 
 
 ```
-
-# Retrieving data to Amazon S3
-## We will read three files from S3
-* Main dataset: CaseStudy2-data.csv
-* Attrition prediction dataset: CaseStudy2CompSet No Attrition.csv
-* Salary prediction dataset: CaseStudy2CompSet No Salary.csv
-
-```{r ConnectingAmazonS3}
+</div>
 
 
+<div class="alert alert-dismissible alert-warning">
+
+<h3><strong>Retrieving data from CSV files</strong></h3>
+<br>
+```{r LoadindLocalFile,warning=FALSE, message=FALSE}
+
+
+
+df_std_1 = read.csv(main_data_file,header = TRUE)
+
+
+```
+</div>
+
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Retrieving data to Amazon S3</strong></h3>
+<br><h4>We will read three files from S3</h4></br>
+<ul>
+<li>Main dataset: CaseStudy2-data.csv
+<li>Attrition prediction dataset: CaseStudy2CompSet No Attrition.csv
+<li>Salary prediction dataset: CaseStudy2CompSet No Salary.csv
+</ul>
+<br>
+```{r ConnectingAmazonS3,warning=FALSE, message=FALSE}
+
+
+#Setting the access key and key ids
 Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIA5HRB7XJNIOKHMHYK",
            "AWS_SECRET_ACCESS_KEY" = "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",
            "AWS_DEFAULT_REGION"="us-east-2")
 
+#Retrieving three datasets
 obj_main_ds = get_object("CaseStudy2-data.csv", bucket = "ddsproject1")
 df_std_1=read.csv(text = rawToChar(obj_main_ds), sep=",", header = TRUE)
-
 obj_no_attr = get_object("CaseStudy2CompSet No Attrition.csv", bucket = "ddsproject1")
 df_std_nattr=read.csv(text = rawToChar(obj_no_attr), sep=",", header = TRUE)
-
-
 obj_no_mi = get_object("CaseStudy2CompSet No Salary.csv", bucket = "ddsproject1")
 df_std_mi=read.csv(text = rawToChar(obj_no_mi), sep=",", header = TRUE)
 
 ```
+</div>
 
 
-# Data manipulation
-## Oversampling
-```{r TransformingData}
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Data manipulation and Oversampling imbalanced data</strong></h3>
+<br>
+```{r DataManipulation}
 
 #Function for performing oversampling
 oversampling = function(p_df_data){
@@ -130,16 +169,12 @@ df_std_1$Age = as.numeric(df_std_1$Age)
 df_std_unp = oversampling(df_std_1)
 df_std_unp$MonthlyIncomeScaled = scale(df_std_unp$MonthlyIncome) #/ 100
 
-
-
-
 ```
+</div>
 
-
-
-
-# Data Exploration
-## First we will analyze the continous variables and then the categorical variables
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Data Exploration</strong></h3>
+<br><h4>First we will analyze the continous variables and then the categorical variables</h4></br>
 ```{r DataExploration}
 
 
@@ -217,16 +252,17 @@ round(prop.table(result_table,margin = 2)*100,2)
 df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncome,YearsAtCompany,OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
   
 
-
-
-
-
-
 ```
+</div>
 
-# Feature selection Categorical Data
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Feature selection Categorical Data using Chi-square test</strong></h3>
+<p><h4>Previously we analyzed the different relevant features by visualizing the data.
+In this section we will corroborate that information using Chi-Square test. We will 
+Keep values in the model when p-value is less than 0.05
+</h4></p>
+<br>
 ```{r DeterminingVariableImportance}
-
 
 
 #Categorical feature selection
@@ -283,15 +319,24 @@ df_var_cat_imp$importance[16] = chisq.test(df_std_1$WorkLifeBalance, df_std_1$At
 
 
 df_var_cat_imp  = arrange(df_var_cat_imp, desc(importance))
-
-
+df_var_cat_imp
 
 #Setting the data for the model
 df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncomeScaled,YearsAtCompany,OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
   
 
 ```
-# KNN Model
+</div>
+
+
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>KNN Model</strong></h3>
+<p>Parameters</p>
+<ul>
+<li>Percentage Training data and Testing data: 75
+<li>Iterations to find best K: 20
+<ul>
+<br>
 ```{r KnnModel}
 
 
@@ -303,6 +348,8 @@ df_samples = sample(1:nr_len,round(nr_len*(nr_percentage/100)))
 df_lst_train = df_data_model_0[df_samples,]
 df_lst_test = df_data_model_0[-df_samples,]
 
+
+#Iterations
 lst_ki_index = 20
 lst_knn_data = data.frame(k=numeric(lst_ki_index) ,accuracy=numeric(lst_ki_index) )
 
@@ -327,17 +374,20 @@ confusionMatrix(table_result)
 
 
 ```
+</div>
 
-# Naive Bayes Model
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Naive Bayes Model</strong></h3>
 ```{r NaiveBayes}
 
-
+#Setting training and Testing data
 nr_percentage = 75
 nr_len = nrow(df_data_model_0)
 df_samples = sample(1:nr_len,round(nr_len*(nr_percentage/100)))
 df_lst_train = df_data_model_0[df_samples,]
 df_lst_test = df_data_model_0[-df_samples,]
 
+#Running the model
 model_nb = naiveBayes(df_lst_train[,c(2:8)],df_lst_train$Attrition)
 predict_nb = predict(model_nb,df_lst_test[,c(2:8)])
 result_table = table(predict_nb,df_lst_test$Attrition)
@@ -346,8 +396,12 @@ confusionMatrix(result_table)
 
 
 ```
+</div>
 
-# Logistic Regression Model
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Logistic Regression Model</strong></h3>
+<p>The performance of this model is very low</p>
+<br>
 ```{r LogisticRegression}
 
 glm_model = glm(Attrition~MonthlyIncomeScaled+YearsAtCompany+OverTimeN+JobLevelN+JobSatisfactionN+MaritalStatusN+StockOptionLevelN,family = "binomial", data = df_lst_train)
@@ -358,21 +412,29 @@ mean(predicted.classes == df_lst_test$Attrition)
 
 
 ```
+</div>
 
-# Feature selection for Linear RegressionModel
-```{r}
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Feature selection for Linear RegressionModel</strong></h3>
+<br>
+```{r FeatureConSelection}
 
 data_cor = select(df_std_1,MonthlyIncome,JobLevelN2,JobRoleN,YearsAtCompany,GendeN,TotalWorkingYears,BusinessTravelN,AttritionN)
 data_cor_res = cor(data_cor)
-
-
-ggplot()+geom_point(data = df_std_1,mapping = aes(x=JobLevelN2,y=MonthlyIncome))+geom_jitter()
-
-
+data_cor_res
 ```
+</div>
 
-
-# Linear Regression Model
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Linear Regression Model</strong></h3>
+<p>Parameters
+<ul>
+<li>JobLevel
+<li>YearsAtCompany
+<li>Working years
+</ul>
+</p>
+<br>
 ```{r LinearRegressionModel}
 
 nr_att = nrow(df_std_1) 
@@ -390,11 +452,13 @@ df_mspe_model_0 = data.frame(JobLevelN = df_std_test_m1$JobLevelN2,Observed = df
 df_mspe_model_0$Residual = df_mspe_model_0$Observed - df_mspe_model_0$Predicted
 df_mspe_model_0$IMAPE = abs( df_mspe_model_0$Residual / df_mspe_model_0$Observed )
 df_mspe_model_0$SquareResidual = df_mspe_model_0$Residual^2
+
 nr_mspe_model_0 = mean(df_mspe_model_0$SquareResidual)
 nr_mspe_model_1 = mean(df_mspe_model_0$IMAPE) * 100
-nr_mspe_model_1
+nr_mspe_model_rmse = sqrt(mean(df_mspe_model_0$SquareResidual))
 
-
+sprintf("MAPE: %f",nr_mspe_model_1)
+sprintf("RMSE: %f",nr_mspe_model_rmse)
 
 
 df_mspe_model_0 %>% ggplot()+geom_jitter(aes(x=JobLevelN,y=Observed),color="darkgreen")+
@@ -402,21 +466,27 @@ df_mspe_model_0 %>% ggplot()+geom_jitter(aes(x=JobLevelN,y=Observed),color="dark
 
 
 
-
-
 ```
+</div>
 
-# Predict Attrition using S3 DS
-## KNN detail
-* K = 3
-* Paramaters:
-  + MonthlyIncomeScaled
-  + YearsAtCompany
-  + OverTimeN
-  + JobLevelN
-  + JobSatisfactionN
-  + MaritalStatusN
-  + StockOptionLevelN
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Predict Attrition using S3 DS</strong></h3>
+<p>Predicting attrition from file: CaseStudy2CompSet No Attrition.csv</p>
+<br><h4>KNN detail</h4>
+<ul>
+<li>K = 3
+</ul>
+<br><strong>Parameters</strong></br>
+<ul>
+<li>MonthlyIncomeScaled
+<li>YearsAtCompany
+<li>OverTimeN
+<li>JobLevelN
+<li>JobSatisfactionN
+<li>MaritalStatusN
+<li>StockOptionLevelN
+</ul>
+<br>
 ```{r PreAttrition}
 
 #Setting the data for the model
@@ -440,12 +510,24 @@ ds_predict_model_0 = select(df_predict_ds,MonthlyIncomeScale,YearsAtCompany,Over
 #Running the model
 knn_nattr = knn(df_data_model_0[,c(2:8)], ds_predict_model_0, df_data_model_0$Attrition, k = 3,prob = TRUE)
 #Final result
-df_knn_nattr = data.frame(EmployeeId = df_std_nattr$ID,Attrition=knn_nattr)
+df_knn_nattr = data.frame(EmployeeId = df_std_nattr$ID,JobLevel=df_std_nattr$JobLevel,OverTime = df_std_nattr$OverTime,MonthlyIncome=df_std_nattr$MonthlyIncome,YearsAtCompany=df_std_nattr$YearsAtCompany,JobSatisfaction=df_std_nattr$JobSatisfaction,MaritalStatus=df_std_nattr$MaritalStatus,StockOptionLevel=df_std_nattr$StockOptionLevel,Attrition=knn_nattr)
+
+table(df_knn_nattr$OverTime,df_knn_nattr$Attrition)
+df_knn_nattr %>% ggplot(aes(x=Attrition,fill=OverTime))+geom_bar()
+
+#Creating the prediction file
+df_file_pre = data.frame(ID=df_knn_nattr$EmployeeId,Attrition=df_knn_nattr$Attrition)
+write.csv(df_file_pre,main_data_file_noattr,row.names = FALSE)
 
 
 ```
 
-# Predict Monthly Income using Lineal regression model
+</div>
+
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Predict Monthly Income using Lineal regression model</strong></h3>
+<p>Predicting montyly income from file: CaseStudy2CompSet No Salary.csv</p>
+<br>
 ```{r PreLiRModel }
 
 df_train_lm = select(df_std_1,MonthlyIncome,JobLevelN2,YearsAtCompany,TotalWorkingYears)
@@ -458,46 +540,74 @@ df_test_lm$JobLevelN2 = as.numeric(factor(df_test_lm$JobLevel))
 lm_model_0 = lm(MonthlyIncome~JobLevelN2+YearsAtCompany+TotalWorkingYears,data = df_std_1)
 lm_model_pre_0 = predict(lm_model_0,newdata = df_test_lm)
 
+#Resulting dataset
 df_model_result = data.frame(EmployeeId = df_std_mi$ID,JobLevel = df_std_mi$JobLevel,YearsAtCompany=df_std_mi$YearsAtCompany,MonthlyIncome=lm_model_pre_0)
 df_model_result$JobLevelN = as.numeric(factor(df_model_result$JobLevel))
+df_model_result$MonthlyIncome = round(df_model_result$MonthlyIncome,2)
 
 
 df_model_result %>% ggplot(aes(x=JobLevelN,y=MonthlyIncome))+geom_jitter(color="darkgreen")+
   scale_y_continuous(labels=scales::dollar)+labs(title = "Linear regression model",subtitle = "Monthly Income prediction",x="JobLevel",y="Monthly Income($)")+geom_smooth(method="lm")
 
+#Creating the prediction file
+df_file_pre_mi = data.frame(ID=df_model_result$EmployeeId,MonthlyIncome=df_model_result$MonthlyIncome)
+write.csv(df_file_pre_mi,main_data_file_mi,row.names = FALSE)
 
 
 ```
+</div>
+
+<div class="alert alert-dismissible alert-warning">
+<h3><strong>Business Insight</strong></h3>
+<br>
+<ul>
+<li>People working overtime and roles
+<li>Job Level and Income
+<li>Maritial Status and Young People
+</ul>
+
+```{r BusinessInsight}
+
+
+#People working overtime and Roles overtime
+df_std_unp %>% ggplot(aes(x=Attrition,fill=OverTime))+geom_bar()+theme(axis.text.x = element_text(angle = 45,hjust=1))+labs(title = "Attrition by Work Overtime",x="Attrition",y="Number of Employees")
+  
+  df_std_unp %>% ggplot(aes(x=OverTime,fill=JobRole))+geom_bar()+theme(axis.text.x = element_text(angle = 45,hjust=1))+labs(title = "Overtime by Job Role",x="Work Overtime",y="Number of Overtime")
+res = table(df_std_unp$JobRole,df_std_unp$Attrition)
+round(prop.table(res,2),4)*100
 
 
 
-```{r Appendix}
+#Job Level and Monthly Income
+df_std_unp %>% ggplot(aes(x=Attrition,fill=JobLevel))+geom_bar()+theme(axis.text.x = element_text(angle = 45,hjust=1))+labs(title = "Attrition by Job Level",x="Attrition",y="Number of Employees")
 
+df_std_unp %>% ggplot(aes(x=JobLevelN2,y=MonthlyIncome))+geom_jitter(color="darkgreen")+geom_smooth(method = "lm",aes(x=JobLevelN2,y=MonthlyIncome))+labs(title = "Linear regression model",subtitle = "Monthly Income prediction",x="JobLevel",y="Monthly Income($)")+scale_y_continuous(labels=scales::dollar)
 
-#Job Role
-table(df_std_1$JobRole,df_std_1$Attrition) #Don't like
-#Job Involvement
-table(df_std_1$JobInvolvement,df_std_1$Attrition) #Don't like
 #Maritial Status
-table(df_std_1$MaritalStatus,df_std_1$Attrition) #Maybe
-#Worklife balance
-table(df_std_1$WorkLifeBalance,df_std_1$Attrition) #Don't like
-#Department
-table(df_std_1$Department,df_std_1$Attrition) #Don't like
-#Env.Satisfaction
-table(df_std_1$EnvironmentSatisfaction,df_std_1$Attrition) #Maybe
-#Job.Satisfaction
-table(df_std_1$JobSatisfaction,df_std_1$Attrition) #Yes
-#Business Travel
-table(df_std_1$BusinessTravel,df_std_1$Attrition) #Don't like
-#PerformanceRating
-table(df_std_1$PerformanceRating,df_std_1$Attrition) #Don't like
-#Education
-table(df_std_1$EducationField,df_std_1$Attrition) #Don't like
-#Job Level
-table(df_std_1$JobLevel,df_std_1$Attrition) #Yes
+df_std_unp %>% ggplot(aes(x=Attrition,fill=MaritalStatus))+geom_bar()+labs(title = "Attrition by Maritial Status",x="Attrition",y="Number of Employees")
+
+df_std_unp %>% ggplot(aes(x=Age,fill=Attrition))+geom_density(aes(alpha=0.8))+labs(title = "Attrition by Age",x="Age",y="Density")
+
+
 
 
 ```
-
+</div>
+<div class="alert alert-dismissible alert-warning">
+<p>
+  <h4><strong>Conclusion</strong></h4>
+</p>
+<p>
+Recommendations:
+<ul>
+<li>Reduce the working overtime especially for Research scientist and Sales Executive
+<li>Increase the salary of the new employees
+<li>Create more incentives for young people
+<li>Provide more Training programs
+<li>Provide more benefits such as health insurance coverage
+<li>Provide more discounts in entertaining places
+<li>Create a more positive environment 
+</ul>
+</p>
+</div>
 
