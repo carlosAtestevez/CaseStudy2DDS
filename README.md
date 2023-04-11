@@ -4,7 +4,7 @@ Carlos Estevez
 SMU University
 2023-03-03
 
-## Introduction2
+## Introduction
 
 DDSAnalytics is a company dedicated to conducting data analysis in different areas aiming to help different organizations to streamline their processes and improve their relationship with their business partnes including customers, vendors, and employees.
 
