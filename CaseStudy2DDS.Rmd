@@ -51,6 +51,8 @@ main_data_file = paste0(file_path,"CaseStudy2-data.csv")
 main_data_file_noattr = paste0(file_path,"Case2PredictionsCESTEVEZ Attrition.csv")
 main_data_file_mi = paste0(file_path,"Case2PredictionsCESTEVEZ Salary.csv")
 
+main_data_file_noattr_source = paste0(file_path,"CaseStudy2CompSet No Attrition.csv")
+main_data_file_mi_source = paste0(file_path,"CaseStudy2CompSet No Salary.csv")
 
 ```
 </div>
@@ -168,6 +170,8 @@ df_std_1$Age = as.numeric(df_std_1$Age)
 #Performing oversampling
 df_std_unp = oversampling(df_std_1)
 df_std_unp$MonthlyIncomeScaled = scale(df_std_unp$MonthlyIncome) #/ 100
+#Setting the data for the model
+df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncomeScaled,OverTimeN,JobLevelN,StockOptionLevelN,MaritalStatusN,YearsAtCompany,JobSatisfactionN)
 
 ```
 </div>
@@ -246,11 +250,11 @@ round(prop.table(result_table,margin = 2)*100,2)
 
 
 
-#Variables selected 
-#MonthlyIncome, YearsAtCompany, OverTimeN, JobLevelN, JobSatisfactionN, MaritalStatusN, StockOptionLevelN
-
-df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncome,YearsAtCompany,OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
-  
+# #Variables selected 
+# #MonthlyIncome, YearsAtCompany, OverTimeN, JobLevelN, JobSatisfactionN, MaritalStatusN, StockOptionLevelN
+# 
+# df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncome,YearsAtCompany,OverTimeN,JobLevelN,MaritalStatusN,StockOptionLevelN,JobSatisfactionN)
+#   
 
 ```
 </div>
@@ -321,8 +325,7 @@ df_var_cat_imp$importance[16] = chisq.test(df_std_1$WorkLifeBalance, df_std_1$At
 df_var_cat_imp  = arrange(df_var_cat_imp, desc(importance))
 df_var_cat_imp
 
-#Setting the data for the model
-df_data_model_0 = select(df_std_unp,Attrition,MonthlyIncomeScaled,YearsAtCompany,OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
+
   
 
 ```
@@ -493,7 +496,8 @@ df_mspe_model_0 %>% ggplot()+geom_jitter(aes(x=JobLevelN,y=Observed),color="dark
 df_predict_ds = df_std_nattr
 
 #Transforming categorical variables to numeric
-df_predict_ds$MonthlyIncomeScale = scale(df_predict_ds$MonthlyIncome)
+
+df_predict_ds$ID =  df_std_nattr$ID
 df_predict_ds$YearsAtCompany = as.numeric(df_predict_ds$YearsAtCompany)
 df_predict_ds$OverTime = factor(df_predict_ds$OverTime)
 df_predict_ds$OverTimeN = as.numeric(df_predict_ds$OverTime)
@@ -505,7 +509,15 @@ df_predict_ds$MaritalStatus = factor(df_predict_ds$MaritalStatus)
 df_predict_ds$MaritalStatusN = as.numeric(df_predict_ds$MaritalStatus)
 df_predict_ds$StockOptionLevel = factor(df_predict_ds$StockOptionLevel)
 df_predict_ds$StockOptionLevelN = as.numeric(df_predict_ds$StockOptionLevel)
-ds_predict_model_0 = select(df_predict_ds,MonthlyIncomeScale,YearsAtCompany,OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
+v_mean_monthincome = mean(df_std_unp$MonthlyIncome)
+v_sd_monthlyincome = sd(df_std_unp$MonthlyIncome)
+df_predict_ds = mutate(df_predict_ds,MonthlyIncomeScaled=((MonthlyIncome-v_mean_monthincome)/v_sd_monthlyincome))
+
+
+ds_predict_model_0 = select(df_predict_ds,MonthlyIncomeScaled,YearsAtCompany,OverTimeN,JobLevelN,MaritalStatusN,StockOptionLevelN,JobSatisfactionN)
+
+#df_predict_ds$MonthlyIncomeScale = scale(df_predict_ds$MonthlyIncome)
+
 
 #Running the model
 knn_nattr = knn(df_data_model_0[,c(2:8)], ds_predict_model_0, df_data_model_0$Attrition, k = 3,prob = TRUE)
@@ -519,7 +531,16 @@ df_knn_nattr %>% ggplot(aes(x=Attrition,fill=OverTime))+geom_bar()
 df_file_pre = data.frame(ID=df_knn_nattr$EmployeeId,Attrition=df_knn_nattr$Attrition)
 write.csv(df_file_pre,main_data_file_noattr,row.names = FALSE)
 
+write.csv(df_std_nattr,main_data_file_noattr_source,row.names = FALSE)
 
+
+
+# test_ind = filter(df_predict_ds,ID ==1210)
+# #test_ind_1 = select(test_ind,MonthlyIncomeScaled,YearsAtCompany,OverTimeN,JobLevelN,MaritalStatusN,StockOptionLevelN,JobSatisfaction)
+# test_ind_2 = select(test_ind,MonthlyIncomeScaled,OverTimeN,JobLevelN,StockOptionLevelN,MaritalStatusN,YearsAtCompany)
+# knn_nattr2 = knn(df_data_model_0[,c(2:7)], test_ind_2, df_data_model_0$Attrition, k = 3,prob = TRUE)
+# knn_nattr2
+# test_ind_2
 ```
 
 </div>
@@ -548,7 +569,7 @@ df_model_result$MonthlyIncome = round(df_model_result$MonthlyIncome,2)
 
 df_model_result %>% ggplot(aes(x=JobLevelN,y=MonthlyIncome))+geom_jitter(color="darkgreen")+
   scale_y_continuous(labels=scales::dollar)+labs(title = "Linear regression model",subtitle = "Monthly Income prediction",x="JobLevel",y="Monthly Income($)")+geom_smooth(method="lm")
-
+  
 #Creating the prediction file
 df_file_pre_mi = data.frame(ID=df_model_result$EmployeeId,MonthlyIncome=df_model_result$MonthlyIncome)
 write.csv(df_file_pre_mi,main_data_file_mi,row.names = FALSE)

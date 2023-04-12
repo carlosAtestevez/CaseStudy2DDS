@@ -78,7 +78,7 @@ ui <- fluidPage(
                        textInput("ctxName","Employee's name",value = "<Default>"),
                        radioButtons("ccmbOverTime","Over time",lst_over_st),
                        sliderInput("cniMonthIncome","Monthly Income",min=1,max=50000,value=5000),
-                       sliderInput("cniStockOp","Stock Level(3-->Highest,0-->Lowest)",min=0,max=3,value=1),
+                       sliderInput("cniStockOp","Stock Option Level(0-->Lowest,3-->Highest)",min=0,max=3,value=1),
                        sliderInput("cniJobLevel","Job Level(1-->Highest,5-->Lowest)",min=1,max=5,value=3),
                        radioButtons("ccmbMaritial","Maritial Status",lst_mar_st),
                        sliderInput("cniYearsCompany","Years at the company",min=1,max=50,value=15),

@@ -157,7 +157,7 @@ server <- function(input, output, session) {
     # df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,YearsAtCompany,
     #                          OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
     df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,
-                             OverTimeN,JobLevelN2,StockOptionLevelN,MaritalStatusN,YearsAtCompany)
+                             OverTimeN,JobLevelN2,StockOptionLevelN,MaritalStatusN,YearsAtCompany,JobSatisfactionN)
     
     
     vl_monthly_inc = as.numeric(input$cniMonthIncome)
@@ -174,20 +174,21 @@ server <- function(input, output, session) {
     vl_job_sat = as.numeric(input$cniJobSatis)
     vl_stock = as.numeric(input$cniStockOp)
     vl_mat_st = input$ccmbMaritial
-    if(vl_mat_st=="Divorced"){
-      vl_mat_stn = 1
-    }
-    if(vl_mat_st=="Married"){
-      vl_mat_stn = 2
-    }
-    if(vl_mat_st=="Single"){
-      vl_mat_stn = 3
-    }
+    vl_mat_stn = as.numeric(vl_mat_st)
+    # if(vl_mat_st=="Divorced"){
+    #   vl_mat_stn = as.numeric(1)
+    # }
+    # if(vl_mat_st=="Married"){
+    #   vl_mat_stn = as.numeric(2)
+    # }
+    # if(vl_mat_st=="Single"){
+    #   vl_mat_stn = as.numeric(3)
+    # }
     
     
     ds_predict_model_0 = data.frame(MonthlyIncomeScaled=vl_monthly_inc_scale,
                                     OverTimeN=vl_over_timen,JobLevelN2=vl_job_lev,StockOptionLevelN=vl_stock,
-                                    MaritalStatusN = vl_mat_st,YearsAtCompany=vl_years_company
+                                    MaritalStatusN = vl_mat_stn,YearsAtCompany=vl_years_company,JobSatisfactionN=vl_job_sat
                                     )
     
     # 
@@ -201,12 +202,13 @@ server <- function(input, output, session) {
     # knn_nattr = knn(df_data_model_0[,c(2:8)], ds_predict_model_0, df_data_model_0$Attrition, k = 3,prob = TRUE)
     # 
 
-     knn_nattr = knn(df_data_model_0[,c(2:7)], ds_predict_model_0, df_data_model_0$Attrition, k = input$cnrKnn1,prob = TRUE)
+     knn_nattr = knn(df_data_model_0[,c(2:8)], ds_predict_model_0, df_data_model_0$Attrition, k = input$cnrKnn1,prob = TRUE)
     
      data_res_knn = data.frame(Name = input$ctxName,Result_Knn=knn_nattr,Probability=mean(attributes(knn_nattr)$prob))
      ds_predict_model_0$Result = knn_nattr
      ds_predict_model_0$Probability = mean(attributes(knn_nattr)$prob)
     
+      
      data_res_knn
   })
   
