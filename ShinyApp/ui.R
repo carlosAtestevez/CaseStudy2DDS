@@ -53,7 +53,7 @@ ui <- fluidPage(
                          
                        )
               ),
-               tabPanel("KNN model set-up",icon = icon("microchip"),
+               tabPanel("Models set-up(KNN and NB)",icon = icon("microchip"),
                         numericInput("cniKnn","KNN Iterations",min=5,max=100,value = 20),
                         sliderInput("cslKnnPer","Percentage Training data",min=50,max=90,value = 75),
                         tags$h5(tags$strong("KNN parameters")),
@@ -66,13 +66,25 @@ ui <- fluidPage(
                         checkboxInput("cchJL","JobLevel",value = TRUE),
                         actionButton("btnLRunKnn","Run model",icon = icon("bolt") ),
                         tags$hr(),
+                        tags$h3(tags$strong("KNN results:")),
                         fluidRow(
-                          column(7,"",dataTableOutput("ctoRunModel")),
-                          column(5,"",plotOutput("ploKnnModel"))
+                          column(4,"",verbatimTextOutput("cvboRunModel")),
+                          column(4,"",dataTableOutput("ctoRunModel")),
+                          column(4,"",plotOutput("ploKnnModel"))
+                        ),
+                        tags$hr(),
+                        tags$h3(tags$strong("Naive Bayes results:")),
+                        fluidRow(
+                          column(12,"",verbatimTextOutput("cvboNaive"))
+                        ),
+                        tags$hr(),
+                        tags$h3(tags$strong("Logistic Regression")),
+                        fluidRow(
+                          column(12,"",verbatimTextOutput("cvboLog"))
                         )
                         
                ),
-              tabPanel("Attrition prediction",icon = icon("user-tie"),
+              tabPanel("Attrition predictor",icon = icon("user-tie"),
                        fluidRow(column(4,"",
                        numericInput("cnrKnn1","Default K",value=3),
                        textInput("ctxName","Employee's name",value = "<Default>"),
@@ -86,14 +98,14 @@ ui <- fluidPage(
                        actionButton("btnLRunKnnSimul","Run simulation",icon = icon("bolt") ),
                        tags$hr()),
                        column(8,"",
-                              tags$h3(tags$strong("Will employee leave?")),
+                              tags$h3(tags$strong("Will the employee leave the company?")),
                               tableOutput("ctoRunSimul")),
                        )
               ),
               tabPanel("Monthly Income prediction",icon = icon("sack-dollar"),
                        fluidRow(column(4,"",
                                        textInput("ctxNameR","Employee's name",value = "<Default>"),
-                                       sliderInput("cniJobLevelR","Job Level(5-->Highest,1-->Lowest)",min=1,max=5,value=3),
+                                       sliderInput("cniJobLevelR","Job Level(1-->Lowest,5-->Highest)",min=1,max=5,value=3),
                                        sliderInput("cniYearsCompanyR","Years at the company",min=1,max=50,value=15),
                                        sliderInput("cniYearsCTotalR","Total working years",min=1,max=50,value=15),
                                        actionButton("btnLRunRegre","Run Linear Regression model",icon = icon("bolt") ),
@@ -107,18 +119,5 @@ ui <- fluidPage(
               )
   )
 )
-  # ,
-  # 
-  # h4("Section for plotting"),
-  # fluidRow(
-  #   column(2,"",plotOutput("ploIBU")),
-  #   column(2,"",plotOutput("ploABV")),
-  #   column(3,"",plotOutput("ploABVIBU")),
-  #   column(5,"",plotOutput("ploAdd"))
-  #   ),
-  #   fluidRow(
-  #     column(12,"",verbatimTextOutput("outSection"))
-  #   ),
-  #   tableOutput("tbOut")
-  # )
+
 

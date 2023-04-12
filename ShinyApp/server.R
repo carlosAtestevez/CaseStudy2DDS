@@ -152,6 +152,72 @@ server <- function(input, output, session) {
     
   })
   
+  run_knn_model_k3 = reactive({
+    df_raw_data_over = load_data_over()
+    df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,YearsAtCompany,
+                             OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
+    nr_percentage = input$cslKnnPer
+    nr_len = nrow(df_data_model_0)
+    nr_len = nrow(df_data_model_0)
+    df_samples = sample(1:nr_len,round(nr_len*(nr_percentage/100)))
+    df_lst_train = df_data_model_0[df_samples,]
+    df_lst_test = df_data_model_0[-df_samples,]
+    
+    knn_results = knn(df_lst_train[,c(2:8)], df_lst_test[,c(2:8)], df_lst_train$Attrition, k = 3, prob = TRUE)
+    table_result = table(knn_results,df_lst_test$Attrition)
+    co_matrix  = confusionMatrix(table_result)
+    co_matrix
+  })
+  
+  run_nb_model = reactive({
+    df_raw_data_over = load_data_over()
+    df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,YearsAtCompany,
+                             OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
+    nr_percentage = input$cslKnnPer
+    nr_len = nrow(df_data_model_0)
+    nr_len = nrow(df_data_model_0)
+    df_samples = sample(1:nr_len,round(nr_len*(nr_percentage/100)))
+    df_lst_train = df_data_model_0[df_samples,]
+    df_lst_test = df_data_model_0[-df_samples,]
+    
+    
+    #Running the model
+    model_nb = naiveBayes(df_lst_train[,c(2:8)],df_lst_train$Attrition)
+    predict_nb = predict(model_nb,df_lst_test[,c(2:8)])
+    result_table = table(predict_nb,df_lst_test$Attrition)
+    confusionMatrix(result_table)
+
+  })
+  
+  run_lr_model = reactive({
+    df_raw_data_over = load_data_over()
+    df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,YearsAtCompany,
+                             OverTimeN,JobLevelN,JobSatisfactionN,MaritalStatusN,StockOptionLevelN)
+    nr_percentage = input$cslKnnPer
+    nr_len = nrow(df_data_model_0)
+    nr_len = nrow(df_data_model_0)
+    df_samples = sample(1:nr_len,round(nr_len*(nr_percentage/100)))
+    df_lst_train = df_data_model_0[df_samples,]
+    df_lst_test = df_data_model_0[-df_samples,]
+    
+    glm_model = glm(Attrition~MonthlyIncomeScaled+YearsAtCompany+OverTimeN+JobLevelN+JobSatisfactionN+MaritalStatusN+StockOptionLevelN,family = "binomial", data = df_lst_train)
+    glm_results = predict(glm_model,data=df_lst_test,type='response')
+    predicted.classes <- ifelse(glm_results> 0.5, "Yes", "No")
+    mean(predicted.classes == df_lst_test$Attrition)
+    
+    # 
+    # 
+    # #Running the model
+    # model_nb = naiveBayes(df_lst_train[,c(2:8)],df_lst_train$Attrition)
+    # predict_nb = predict(model_nb,df_lst_test[,c(2:8)])
+    # result_table = table(predict_nb,df_lst_test$Attrition)
+    # confusionMatrix(result_table)
+    
+  })
+  
+  
+  
+  
   run_knn_simul = reactive({
     df_raw_data_over = load_data_over()
     # df_data_model_0 = select(df_raw_data_over,Attrition,MonthlyIncomeScaled,YearsAtCompany,
@@ -175,15 +241,7 @@ server <- function(input, output, session) {
     vl_stock = as.numeric(input$cniStockOp)
     vl_mat_st = input$ccmbMaritial
     vl_mat_stn = as.numeric(vl_mat_st)
-    # if(vl_mat_st=="Divorced"){
-    #   vl_mat_stn = as.numeric(1)
-    # }
-    # if(vl_mat_st=="Married"){
-    #   vl_mat_stn = as.numeric(2)
-    # }
-    # if(vl_mat_st=="Single"){
-    #   vl_mat_stn = as.numeric(3)
-    # }
+
     
     
     ds_predict_model_0 = data.frame(MonthlyIncomeScaled=vl_monthly_inc_scale,
@@ -219,16 +277,6 @@ server <- function(input, output, session) {
   event_run_simul = eventReactive(input$btnLRunKnnSimul,{
     showNotification("Running simulation...")
     data_result = run_knn_simul()
-    # v_msg = data_result$Result
-    # if(v_msg=="Yes"){
-    #   v_msg = "The chance of attrition is really high!"
-    # }else{
-    #   v_msg = "The chance of attrition is low"
-    # }
-    # showModal(modalDialog(
-    #   title = "Algorithm result",
-    #   v_msg
-    # ))
     data_result
   })
   
@@ -249,7 +297,7 @@ server <- function(input, output, session) {
     str_format
   })
   
-  output$ctoRunModel = renderDataTable({
+  output$ctoRunModel = renderDataTable(options = list(pageLength=12),{
     event_run_knn_model()
   })
   output$ploKnnModel=renderPlot({
@@ -257,6 +305,27 @@ server <- function(input, output, session) {
     pl_data_model %>% ggplot(aes(x=K,y=Accuracy,fill=K))+geom_bar(stat="identity")+
       scale_y_continuous(labels=scales::percent)+labs(title="KNN Model K-values",
                                                       x="K",y="Percentage(%)")
+    
+  })
+  
+  output$cvboRunModel=renderPrint({
+    pl_data_model = event_run_knn_model()
+    co_matrix = run_knn_model_k3()
+    co_matrix
+    
+  })
+  
+  output$cvboNaive=renderPrint({
+    pl_data_model = event_run_knn_model()
+    co_matrix = run_nb_model()
+    co_matrix
+    
+  })
+  
+  output$cvboLog=renderPrint({
+    pl_data_model = event_run_knn_model()
+    co_matrix = run_lr_model()
+    co_matrix
     
   })
   
@@ -314,7 +383,6 @@ server <- function(input, output, session) {
     
     data_result = event_regression_model()
     data.frame(Amount=data_result$AmountFor,JobLevel=data_result$JobLevel)
-    #df_model_result$MonthlyIncome
   })
   
   output$plotOver=renderPlot({

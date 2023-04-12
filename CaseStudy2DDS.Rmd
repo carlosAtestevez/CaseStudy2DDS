@@ -11,7 +11,17 @@ output:
 
 <div class="alert alert-dismissible alert-warning">
 
+<h3><strong>Video presentation</strong></h3>
+
+<a href="https://www.youtube.com/watch?v=8Bq4Du7PY6k">Video presentation</a>
+
+</div>
+
+<div class="alert alert-dismissible alert-warning">
+
 <h3><strong>Introduction</strong></h3>
+
+https://www.youtube.com/watch?v=8Bq4Du7PY6k
 
 DDSAnalytics is a company dedicated to conducting data analysis in different areas aiming to help different organizations to streamline their processes and improve their relationship with their business partnes including customers, vendors, and employees.
 
